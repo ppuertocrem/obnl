@@ -70,6 +70,7 @@ class Node(object):
         self._next_step = False
         self._reply_to = None
         self._is_first = is_first
+        self._current_time = 0
 
         self._input_values = {}
         self._input_attributes = input_attributes
@@ -118,7 +119,7 @@ class Node(object):
 
             self._channel.publish(exchange='', routing_key=reply_to, body=m.SerializeToString())
 
-    def step(self):
+    def step(self, current_time):
         raise NotImplementedError('Abstract Node call')
 
     def _on_local_message(self, ch, method, props, body):
@@ -132,10 +133,12 @@ class Node(object):
         """
         print(self.name, 'receives local', )
         if self._next_step and (self._is_first or not self._input_attributes or len(self._input_values.keys()) == len(self._input_attributes)):
-            self.step()
+            self.step(self._current_time)
             self._next_step = False
             self._input_values.clear()
-            self.reply_to(self._reply_to, NextStep())
+            nm = NextStep()
+            nm.time_step = self._current_time
+            self.reply_to(self._reply_to, nm)
 
     def _on_simulation_message(self, ch, method, props, body):
         """
@@ -153,6 +156,9 @@ class Node(object):
         if mm.details.Is(NextStep.DESCRIPTOR) and mm.node_name == Node.SCHEDULER_NAME:
             self._next_step = True
             self._reply_to = props.reply_to
+            nm = NextStep()
+            mm.details.Unpack(nm)
+            self._current_time = nm.time_step
             # TODO: call updateX or updateY depending on the message content?
             self.send_local(mm.details)
 

@@ -19,9 +19,9 @@ class ClientNode(Node):
                               routing_key=Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
                               body=m.SerializeToString())
 
-    def step(self):
+    def step(self, current_time):
         print('----- '+self.name+' -----')
-        print(self._name, self._input_attributes)
+        print(self._name, current_time)
         print(self._name, self._input_values)
         print(self._name, self._output_attributes)
         print('=============')
