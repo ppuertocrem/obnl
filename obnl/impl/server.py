@@ -1,6 +1,5 @@
 import json
 import pika
-from threading import Lock
 
 from obnl.impl.data import Node
 from obnl.impl.loaders import JSONLoader
