@@ -8,12 +8,12 @@ class Loader(object):
     Base class of every Loaders
     """
 
-    def __init__(self, channel):
+    def __init__(self, scheduler):
         """
         
-        :param channel: the amqp channel 
+        :param host: the scheduler 
         """
-        self._channel = channel
+        self._scheduler = scheduler
         self._nodes = []
         self._links = []
 
@@ -58,8 +58,8 @@ class JSONLoader(Loader):
         }
     }   
     """
-    def __init__(self, channel, config_file):
-        super(JSONLoader, self).__init__(channel)
+    def __init__(self, scheduler, config_file):
+        super(JSONLoader, self).__init__(scheduler)
 
         # load the data from json file
         with open(config_file) as jsonfile:
@@ -72,13 +72,12 @@ class JSONLoader(Loader):
 
     def _find_in_nodes(self, str_node):
         for node in self._nodes:
-            if str_node == node.name:
+            if str_node == node:
                 return node
 
     def _prepare_nodes(self, nodes):
         for name, data in nodes.items():
-            # TODO: create Node but do not associate callback!
-            self._nodes.append(Node(self._channel, name))
+            self._nodes.append(name)
 
     def _prepare_links(self, links):
 
@@ -88,4 +87,4 @@ class JSONLoader(Loader):
             in_node = self._find_in_nodes(in_data['node'])
             out_node = self._find_in_nodes(out_data['node'])
 
-            out_node.create_link(out_data['attr'], in_node)
+            self._scheduler.create_data_link(out_node, out_data['attr'], in_node)
