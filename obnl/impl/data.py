@@ -108,7 +108,6 @@ class Node(object):
         :param reply_to: the asker 
         :param message: the message (str)
         """
-        print(self.name, 'sends reply', reply_to)
         if reply_to:
 
             m = MetaMessage()
@@ -131,7 +130,6 @@ class Node(object):
         :param props: the properties
         :param body: the message
         """
-        print(self.name, 'receives local', )
         if self._next_step and (self._is_first or not self._input_attributes or len(self._input_values.keys()) == len(self._input_attributes)):
             self.step(self._current_time)
             self._next_step = False
@@ -149,7 +147,6 @@ class Node(object):
         :param props: the properties
         :param body: the message
         """
-        print(self.name, 'receives simu', props.reply_to)
         mm = MetaMessage()
         mm.ParseFromString(body)
 
@@ -159,7 +156,7 @@ class Node(object):
             nm = NextStep()
             mm.details.Unpack(nm)
             self._current_time = nm.time_step
-            # TODO: call updateX or updateY depending on the message content?
+            # TODO: call updateX or updateY depending on the message detail?
             self.send_local(mm.details)
 
     def _on_data_message(self, ch, method, props, body):
@@ -171,7 +168,6 @@ class Node(object):
         :param props: the properties
         :param body: the message
         """
-        print(self.name, 'receives data')
         mm = MetaMessage()
         mm.ParseFromString(body)
 
@@ -191,7 +187,6 @@ class Node(object):
         :param reply_to: the way to reply
         :return: 
         """
-        print(self.name, 'sends local')
         self._channel.publish(exchange=Node.LOCAL_NODE_EXCHANGE + self._name,
                               routing_key=Node.LOCAL_NODE_EXCHANGE + self._name,
                               body=message.SerializeToString())
@@ -207,7 +202,6 @@ class Node(object):
         m.node_name = self._name
         m.details.Pack(message)
 
-        print(self.name, 'sends scheduler')
         self._channel.publish(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name,
                               routing_key=Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
                               body=m.SerializeToString())
@@ -231,7 +225,6 @@ class Node(object):
         m.details.Pack(am)
 
         if self._output_attributes:
-            print(self.name, 'sends', attr, 'with value', value)
             self._channel.publish(exchange=Node.DATA_NODE_EXCHANGE + self._name,
                                   routing_key=Node.DATA_NODE_EXCHANGE + attr,
                                   body=m.SerializeToString())

@@ -130,8 +130,6 @@ class Scheduler(Node):
         mm.node_name = self._name
         mm.details.Pack(ns)
 
-        print(Node.UPDATE_ROUTING + str(self._current_block) + ':' + str(self._current_step))
-
         self._channel.publish(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name,
                               routing_key=Node.UPDATE_ROUTING + str(self._current_block),
                               properties=pika.BasicProperties(reply_to=Node.SIMULATION_NODE_QUEUE + self.name),
@@ -150,37 +148,26 @@ class Scheduler(Node):
         m = MetaMessage()
         m.ParseFromString(body)
 
-        print(m.node_name)
-
         if m.details.Is(SimulatorConnection.DESCRIPTOR):
             self._connected.add(m.node_name)
             if len(self._connected) == sum([len(b) for b in self._blocks]):
-                print('first')
                 self._update_time()
 
         if m.details.Is(NextStep.DESCRIPTOR):
             if m.node_name in self._blocks[self._current_block]:
-                print('add')
                 self._sent.add(m.node_name)
-            else:
-                print('error:', m.node_name)
 
-        print('---- START ----')
         if len(self._connected) == sum([len(b) for b in self._blocks]):
-            print('sent: ', len(self._sent), '==', len(self._blocks[self._current_block]))
             # block management
             if len(self._sent) == len(self._blocks[self._current_block]):
                 self._current_block = (self._current_block + 1) % len(self._blocks)
-                print('block: ', self._current_block)
                 if self._current_block == 0:
                     self._current_step += 1
                 if self._current_step >= len(self._steps):
                     self._quit = True
-                    print('QUIT')
                 if not self._quit:
                     self._update_time()
                     self._sent.clear()
-        print('----- END -----')
 
     def _on_data_message(self, ch, method, props, body):
         """
