@@ -69,9 +69,6 @@ class Scheduler(Node):
         self._current_block = 0
         super(Scheduler, self).start()
 
-    def step(self, current_time, time_step):
-        pass
-
     def create_data_link(self, node_out, attr_out, node_in, attr_in):
         """
         Creates and connects the attribute communication from Node to Node.
@@ -118,18 +115,18 @@ class Scheduler(Node):
         ns.time_step = self._steps[self._current_step]
         ns.current_time = self._current_time
 
-        self._send(Node.SIMULATION_NODE_EXCHANGE + self._name,
-                   Node.UPDATE_ROUTING + str(self._current_block),
-                   ns,
-                   reply_to=Node.SIMULATION_NODE_QUEUE + self.name)
+        self.send(Node.SIMULATION_NODE_EXCHANGE + self._name,
+                  Node.UPDATE_ROUTING + str(self._current_block),
+                  ns,
+                  reply_to=Node.SIMULATION_NODE_QUEUE + self.name)
 
-    def _on_local_message(self, ch, method, props, body):
+    def on_local_message(self, ch, method, props, body):
         """
         Displays message receive from the general queue.
         """
         pass
 
-    def _on_simulation_message(self, ch, method, props, body):
+    def on_simulation_message(self, ch, method, props, body):
         """
         Displays message receive from the update queue and send the next time message.
         """
@@ -171,7 +168,7 @@ class Scheduler(Node):
 
         self.reply_to(reply_to, sc)
 
-    def _on_data_message(self, ch, method, props, body):
+    def on_data_message(self, ch, method, props, body):
         """
         Displays message receive from the data queue.
         """
