@@ -26,8 +26,8 @@ class ClientNode(object):
     def start(self):
         Thread(target=self._node_impl.start).start()
 
-    def step(self, current_time):
-        raise NotImplementedError('abstract function call from '+str(self.__class__))
+    def step(self, current_time, time_step):
+        raise NotImplementedError('Abstract function call from '+str(self.__class__))
 
     def update_attribute(self, attr, value):
         self._node_impl.update_attribute(attr, value)

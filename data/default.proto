@@ -15,6 +15,11 @@ message SimulatorConnection {
     SimulationType type = 1;
 }
 
+message SchedulerConnection {
+    map<string, float> initial_values = 1;
+    map<string, string> attribute_links = 2;
+}
+
 message AttributeMessage {
     float simulation_time = 1;
     string attribute_name = 2;
@@ -23,6 +28,7 @@ message AttributeMessage {
 
 message NextStep {
     float time_step = 1;
+    float current_time = 2;
 }
 
 message MetaMessage {

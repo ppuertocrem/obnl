@@ -72,6 +72,7 @@ class Node(object):
         self._reply_to = None
         self._is_first = is_first
         self._current_time = 0
+        self._time_step = 0
 
         self._input_values = {}
         self._input_attributes = input_attributes
@@ -118,8 +119,8 @@ class Node(object):
 
             self._channel.publish(exchange='', routing_key=reply_to, body=m.SerializeToString())
 
-    def step(self, current_time):
-        raise NotImplementedError('Abstract Node call')
+    def step(self, current_time, time_step):
+        raise NotImplementedError('Abstract function call from '+str(self.__class__))
 
     def _on_local_message(self, ch, method, props, body):
         """
@@ -132,11 +133,12 @@ class Node(object):
         """
         if self._next_step and (self._is_first or not self._input_attributes or len(self._input_values.keys()) == len(
                 self._input_attributes)):
-            self.step(self._current_time)
+            self.step(self._current_time, self._time_step)
             self._next_step = False
             self._input_values.clear()
             nm = NextStep()
-            nm.time_step = self._current_time
+            nm.current_time = self._current_time
+            nm.time_step = self._time_step
             self.reply_to(self._reply_to, nm)
 
     def _on_simulation_message(self, ch, method, props, body):
@@ -156,7 +158,8 @@ class Node(object):
             self._reply_to = props.reply_to
             nm = NextStep()
             mm.details.Unpack(nm)
-            self._current_time = nm.time_step
+            self._current_time = nm.current_time
+            self._time_step = nm.time_step
             # TODO: call updateX or updateY depending on the message detail?
             self.send_local(mm.details)
 
@@ -259,5 +262,5 @@ class ClientNode(Node):
     def output_attributes(self):
         return self._output_attributes
 
-    def step(self, current_time):
-        self._api_node.step(current_time)
+    def step(self, current_time, time_step):
+        self._api_node.step(current_time, time_step)

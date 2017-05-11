@@ -30,6 +30,8 @@ class Scheduler(Node):
 
         self._steps, self._blocks = self._load_data(config_file, schedule_file)
 
+        self._current_time = 0
+
     def _load_data(self, config_file, schedule_file):
         """
 
@@ -66,7 +68,7 @@ class Scheduler(Node):
         self._current_block = 0
         super(Scheduler, self).start()
 
-    def step(self, current_time):
+    def step(self, current_time, time_step):
         pass
 
     def create_data_link(self, node_out, attr, node_in):
@@ -109,6 +111,7 @@ class Scheduler(Node):
         """
         ns = NextStep()
         ns.time_step = self._steps[self._current_step]
+        ns.current_time = self._current_time
 
         mm = MetaMessage()
         mm.node_name = self._name
@@ -135,6 +138,7 @@ class Scheduler(Node):
         if m.details.Is(SimulatorConnection.DESCRIPTOR):
             self._connected.add(m.node_name)
             if len(self._connected) == sum([len(b) for b in self._blocks]):
+                self._current_time += self._steps[self._current_step]
                 self._update_time()
 
         if m.details.Is(NextStep.DESCRIPTOR):
@@ -147,6 +151,7 @@ class Scheduler(Node):
                 self._current_block = (self._current_block + 1) % len(self._blocks)
                 if self._current_block == 0:
                     self._current_step += 1
+                    self._current_time += self._steps[self._current_step]
                 if self._current_step >= len(self._steps):
                     self._quit = True
                 if not self._quit:

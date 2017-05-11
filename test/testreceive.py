@@ -6,8 +6,9 @@ class ClientTestNode(ClientNode):
     def __init__(self, host, name, input_attributes=None, output_attributes=None, is_first=False):
         super(ClientTestNode, self).__init__(host, name, input_attributes, output_attributes, is_first)
 
-    def step(self, current_time):
+    def step(self, current_time, time_step):
         print('----- '+self.name+' -----')
+        print(self.name, time_step)
         print(self.name, current_time)
         print(self.name, self.input_values)
         print(self.name, self.output_attributes)
