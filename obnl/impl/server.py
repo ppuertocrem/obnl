@@ -3,7 +3,7 @@ import pika
 
 from obnl.impl.node import Node
 from obnl.impl.loaders import JSONLoader
-from obnl.impl.message import SimulatorConnection, NextStep, MetaMessage
+from obnl.impl.message import SimulatorConnection, NextStep, MetaMessage, SchedulerConnection
 
 
 class Scheduler(Node):
@@ -25,6 +25,7 @@ class Scheduler(Node):
 
         self._connected = set()
         self._sent = set()
+        self._links = {}
 
         self._channel.exchange_declare(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name)
 
@@ -71,20 +72,24 @@ class Scheduler(Node):
     def step(self, current_time, time_step):
         pass
 
-    def create_data_link(self, node_out, attr, node_in):
+    def create_data_link(self, node_out, attr_out, node_in, attr_in):
         """
         Creates and connects the attribute communication from Node to Node.
 
         :param node_out: the Node sender name
-        :param attr: the name of the attribute the Node want to communicate
+        :param attr_out: the name of the attribute the Node want to communicate
         :param node_in: the Node receiver name
+        :param attr_in: the name of the attribute from the Node receiver point of view
         """
         self._channel.exchange_declare(exchange=Node.DATA_NODE_EXCHANGE + node_out)
         self._channel.queue_declare(queue=Node.DATA_NODE_QUEUE + node_in)
 
         self._channel.queue_bind(exchange=Node.DATA_NODE_EXCHANGE + node_out,
-                                 routing_key=Node.DATA_NODE_EXCHANGE + attr,
+                                 routing_key=Node.DATA_NODE_EXCHANGE + attr_out,
                                  queue=Node.DATA_NODE_QUEUE + node_in)
+        if node_in not in self._links:
+            self._links[node_in] = {}
+        self._links[node_in][attr_out] = attr_in
 
     def create_simulation_links(self, node, position):
         """
@@ -113,14 +118,10 @@ class Scheduler(Node):
         ns.time_step = self._steps[self._current_step]
         ns.current_time = self._current_time
 
-        mm = MetaMessage()
-        mm.node_name = self._name
-        mm.details.Pack(ns)
-
-        self._channel.publish(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name,
-                              routing_key=Node.UPDATE_ROUTING + str(self._current_block),
-                              properties=pika.BasicProperties(reply_to=Node.SIMULATION_NODE_QUEUE + self.name),
-                              body=mm.SerializeToString())
+        self._send(Node.SIMULATION_NODE_EXCHANGE + self._name,
+                   Node.UPDATE_ROUTING + str(self._current_block),
+                   ns,
+                   reply_to=Node.SIMULATION_NODE_QUEUE + self.name)
 
     def _on_local_message(self, ch, method, props, body):
         """
@@ -136,7 +137,7 @@ class Scheduler(Node):
         m.ParseFromString(body)
 
         if m.details.Is(SimulatorConnection.DESCRIPTOR):
-            self._connected.add(m.node_name)
+            self._simulator_connection(m, props.reply_to)
             if len(self._connected) == sum([len(b) for b in self._blocks]):
                 self._current_time += self._steps[self._current_step]
                 self._update_time()
@@ -151,12 +152,24 @@ class Scheduler(Node):
                 self._current_block = (self._current_block + 1) % len(self._blocks)
                 if self._current_block == 0:
                     self._current_step += 1
+                    if self._current_step >= len(self._steps):
+                        self._quit = True
+                        return
                     self._current_time += self._steps[self._current_step]
-                if self._current_step >= len(self._steps):
-                    self._quit = True
                 if not self._quit:
                     self._update_time()
                     self._sent.clear()
+
+    def _simulator_connection(self, message, reply_to):
+        node_name = message.node_name
+        self._connected.add(node_name)
+
+        sc = SchedulerConnection()
+        if node_name in self._links:
+            for k, v in self._links[node_name].items():
+                sc.attribute_links[k] = v
+
+        self.reply_to(reply_to, sc)
 
     def _on_data_message(self, ch, method, props, body):
         """

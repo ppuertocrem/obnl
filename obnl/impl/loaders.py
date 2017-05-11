@@ -85,4 +85,4 @@ class JSONLoader(Loader):
             in_node = self._find_in_nodes(in_data['node'])
             out_node = self._find_in_nodes(out_data['node'])
 
-            self._scheduler.create_data_link(out_node, out_data['attr'], in_node)
+            self._scheduler.create_data_link(out_node, out_data['attr'], in_node, in_data['attr'])

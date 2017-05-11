@@ -1,6 +1,6 @@
 import pika
 
-from obnl.impl.message import MetaMessage, AttributeMessage, SimulatorConnection, NextStep
+from obnl.impl.message import MetaMessage, AttributeMessage, SimulatorConnection, NextStep, SchedulerConnection
 
 
 class Node(object):
@@ -74,6 +74,7 @@ class Node(object):
         self._current_time = 0
         self._time_step = 0
 
+        self._links = {}
         self._input_values = {}
         self._input_attributes = input_attributes
         self._output_attributes = output_attributes
@@ -131,8 +132,10 @@ class Node(object):
         :param props: the properties
         :param body: the message
         """
-        if self._next_step and (self._is_first or not self._input_attributes or len(self._input_values.keys()) == len(
-                self._input_attributes)):
+        if self._next_step \
+                and (self._is_first
+                     or not self._input_attributes
+                     or len(self._input_values.keys()) == len(self._input_attributes)):
             self.step(self._current_time, self._time_step)
             self._next_step = False
             self._input_values.clear()
@@ -154,14 +157,18 @@ class Node(object):
         mm.ParseFromString(body)
 
         if mm.details.Is(NextStep.DESCRIPTOR) and mm.node_name == Node.SCHEDULER_NAME:
-            self._next_step = True
-            self._reply_to = props.reply_to
             nm = NextStep()
             mm.details.Unpack(nm)
+            self._next_step = True
+            self._reply_to = props.reply_to
             self._current_time = nm.current_time
             self._time_step = nm.time_step
             # TODO: call updateX or updateY depending on the message detail?
             self.send_local(mm.details)
+        elif mm.details.Is(SchedulerConnection.DESCRIPTOR):
+            sc = SchedulerConnection()
+            mm.details.Unpack(sc)
+            self._links = dict(sc.attribute_links)
 
     def _on_data_message(self, ch, method, props, body):
         """
@@ -178,7 +185,7 @@ class Node(object):
         if mm.details.Is(AttributeMessage.DESCRIPTOR):
             am = AttributeMessage()
             mm.details.Unpack(am)
-            self._input_values[am.attribute_name] = am.attribute_value
+            self._input_values[self._links[am.attribute_name]] = am.attribute_value
 
         # TODO: call updateX or updateY depending on the meta content
         self.send_local(mm.details)
@@ -188,12 +195,11 @@ class Node(object):
         Sends the content to local.
 
         :param message: a protobuf message 
-        :param reply_to: the way to reply
         :return: 
         """
-        self._channel.publish(exchange=Node.LOCAL_NODE_EXCHANGE + self._name,
-                              routing_key=Node.LOCAL_NODE_EXCHANGE + self._name,
-                              body=message.SerializeToString())
+        self._send(Node.LOCAL_NODE_EXCHANGE + self._name,
+                   Node.LOCAL_NODE_EXCHANGE + self._name,
+                   message)
 
     def send_scheduler(self, message):
         """
@@ -202,13 +208,20 @@ class Node(object):
         :param message: a protobuf message 
         :return: 
         """
-        m = MetaMessage()
-        m.node_name = self._name
-        m.details.Pack(message)
+        self._send(Node.SIMULATION_NODE_EXCHANGE + self._name,
+                   Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
+                   message)
 
-        self._channel.publish(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name,
-                              routing_key=Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
-                              body=m.SerializeToString())
+    def _send(self, exchange, routing, message, reply_to=None):
+
+        mm = MetaMessage()
+        mm.node_name = self._name
+        mm.details.Pack(message)
+
+        self._channel.publish(exchange=exchange,
+                              routing_key=routing,
+                              properties=pika.BasicProperties(reply_to=reply_to),
+                              body=mm.SerializeToString())
 
     def update_attribute(self, attr, value):
         """
@@ -219,7 +232,7 @@ class Node(object):
         :return: 
         """
         am = AttributeMessage()
-        am.simulation_time = 0  # FIXME: where is the simulation time ?
+        am.simulation_time = self._current_time
         am.attribute_name = attr
         am.attribute_value = float(value)
 
@@ -243,12 +256,10 @@ class ClientNode(Node):
         si = SimulatorConnection()
         si.type = SimulatorConnection.OTHER
 
-        m = MetaMessage()
-        m.node_name = self._name
-        m.details.Pack(si)
-        self._channel.publish(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name,
-                              routing_key=Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
-                              body=m.SerializeToString())
+        self._send(Node.SIMULATION_NODE_EXCHANGE + self._name,
+                   Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
+                   si,
+                   reply_to=Node.SIMULATION_NODE_QUEUE + self.name)
 
     @property
     def input_values(self):

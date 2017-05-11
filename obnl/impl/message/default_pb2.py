@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='data/default.proto',
   package='obnl.common',
   syntax='proto3',
-  serialized_pb=_b('\n\x12\x64\x61ta/default.proto\x12\x0bobnl.common\x1a\x19google/protobuf/any.proto\"\x0c\n\nSystemInit\"\x8e\x01\n\x13SimulatorConnection\x12=\n\x04type\x18\x01 \x01(\x0e\x32/.obnl.common.SimulatorConnection.SimulationType\"8\n\x0eSimulationType\x12\t\n\x05OTHER\x10\x00\x12\x0b\n\x07THERMAL\x10\x01\x12\x0e\n\nELECTRICAL\x10\x02\"\\\n\x10\x41ttributeMessage\x12\x17\n\x0fsimulation_time\x18\x01 \x01(\x02\x12\x16\n\x0e\x61ttribute_name\x18\x02 \x01(\t\x12\x17\n\x0f\x61ttribute_value\x18\x03 \x01(\x02\"3\n\x08NextStep\x12\x11\n\ttime_step\x18\x01 \x01(\x02\x12\x14\n\x0c\x63urrent_time\x18\x02 \x01(\x02\"\xd5\x01\n\x0bMetaMessage\x12\x11\n\tnode_name\x18\x01 \x01(\t\x12\x32\n\x04type\x18\x02 \x01(\x0e\x32$.obnl.common.MetaMessage.MessageType\x12%\n\x07\x64\x65tails\x18\x04 \x01(\x0b\x32\x14.google.protobuf.Any\"X\n\x0bMessageType\x12\x08\n\x04STEP\x10\x00\x12\x08\n\x04INIT\x10\x01\x12\x0c\n\x08UPDATE_X\x10\x02\x12\x0c\n\x08UPDATE_Y\x10\x03\x12\r\n\tATTRIBUTE\x10\x04\x12\n\n\x06\x41NSWER\x10\x05\"\x06\n\x04Quitb\x06proto3')
+  serialized_pb=_b('\n\x12\x64\x61ta/default.proto\x12\x0bobnl.common\x1a\x19google/protobuf/any.proto\"\x0c\n\nSystemInit\"\x8e\x01\n\x13SimulatorConnection\x12=\n\x04type\x18\x01 \x01(\x0e\x32/.obnl.common.SimulatorConnection.SimulationType\"8\n\x0eSimulationType\x12\t\n\x05OTHER\x10\x00\x12\x0b\n\x07THERMAL\x10\x01\x12\x0e\n\nELECTRICAL\x10\x02\"\x9e\x02\n\x13SchedulerConnection\x12K\n\x0einitial_values\x18\x01 \x03(\x0b\x32\x33.obnl.common.SchedulerConnection.InitialValuesEntry\x12M\n\x0f\x61ttribute_links\x18\x02 \x03(\x0b\x32\x34.obnl.common.SchedulerConnection.AttributeLinksEntry\x1a\x34\n\x12InitialValuesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02:\x02\x38\x01\x1a\x35\n\x13\x41ttributeLinksEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\\\n\x10\x41ttributeMessage\x12\x17\n\x0fsimulation_time\x18\x01 \x01(\x02\x12\x16\n\x0e\x61ttribute_name\x18\x02 \x01(\t\x12\x17\n\x0f\x61ttribute_value\x18\x03 \x01(\x02\"3\n\x08NextStep\x12\x11\n\ttime_step\x18\x01 \x01(\x02\x12\x14\n\x0c\x63urrent_time\x18\x02 \x01(\x02\"\xd5\x01\n\x0bMetaMessage\x12\x11\n\tnode_name\x18\x01 \x01(\t\x12\x32\n\x04type\x18\x02 \x01(\x0e\x32$.obnl.common.MetaMessage.MessageType\x12%\n\x07\x64\x65tails\x18\x04 \x01(\x0b\x32\x14.google.protobuf.Any\"X\n\x0bMessageType\x12\x08\n\x04STEP\x10\x00\x12\x08\n\x04INIT\x10\x01\x12\x0c\n\x08UPDATE_X\x10\x02\x12\x0c\n\x08UPDATE_Y\x10\x03\x12\r\n\tATTRIBUTE\x10\x04\x12\n\n\x06\x41NSWER\x10\x05\"\x06\n\x04Quitb\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_any__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -86,8 +86,8 @@ _METAMESSAGE_MESSAGETYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=494,
-  serialized_end=582,
+  serialized_start=783,
+  serialized_end=871,
 )
 _sym_db.RegisterEnumDescriptor(_METAMESSAGE_MESSAGETYPE)
 
@@ -148,6 +148,118 @@ _SIMULATORCONNECTION = _descriptor.Descriptor(
 )
 
 
+_SCHEDULERCONNECTION_INITIALVALUESENTRY = _descriptor.Descriptor(
+  name='InitialValuesEntry',
+  full_name='obnl.common.SchedulerConnection.InitialValuesEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='obnl.common.SchedulerConnection.InitialValuesEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='obnl.common.SchedulerConnection.InitialValuesEntry.value', index=1,
+      number=2, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=_descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001')),
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=401,
+  serialized_end=453,
+)
+
+_SCHEDULERCONNECTION_ATTRIBUTELINKSENTRY = _descriptor.Descriptor(
+  name='AttributeLinksEntry',
+  full_name='obnl.common.SchedulerConnection.AttributeLinksEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='obnl.common.SchedulerConnection.AttributeLinksEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='obnl.common.SchedulerConnection.AttributeLinksEntry.value', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=_descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001')),
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=455,
+  serialized_end=508,
+)
+
+_SCHEDULERCONNECTION = _descriptor.Descriptor(
+  name='SchedulerConnection',
+  full_name='obnl.common.SchedulerConnection',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='initial_values', full_name='obnl.common.SchedulerConnection.initial_values', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='attribute_links', full_name='obnl.common.SchedulerConnection.attribute_links', index=1,
+      number=2, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[_SCHEDULERCONNECTION_INITIALVALUESENTRY, _SCHEDULERCONNECTION_ATTRIBUTELINKSENTRY, ],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=222,
+  serialized_end=508,
+)
+
+
 _ATTRIBUTEMESSAGE = _descriptor.Descriptor(
   name='AttributeMessage',
   full_name='obnl.common.AttributeMessage',
@@ -188,8 +300,8 @@ _ATTRIBUTEMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=221,
-  serialized_end=313,
+  serialized_start=510,
+  serialized_end=602,
 )
 
 
@@ -226,8 +338,8 @@ _NEXTSTEP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=315,
-  serialized_end=366,
+  serialized_start=604,
+  serialized_end=655,
 )
 
 
@@ -272,8 +384,8 @@ _METAMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=369,
-  serialized_end=582,
+  serialized_start=658,
+  serialized_end=871,
 )
 
 
@@ -296,17 +408,22 @@ _QUIT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=584,
-  serialized_end=590,
+  serialized_start=873,
+  serialized_end=879,
 )
 
 _SIMULATORCONNECTION.fields_by_name['type'].enum_type = _SIMULATORCONNECTION_SIMULATIONTYPE
 _SIMULATORCONNECTION_SIMULATIONTYPE.containing_type = _SIMULATORCONNECTION
+_SCHEDULERCONNECTION_INITIALVALUESENTRY.containing_type = _SCHEDULERCONNECTION
+_SCHEDULERCONNECTION_ATTRIBUTELINKSENTRY.containing_type = _SCHEDULERCONNECTION
+_SCHEDULERCONNECTION.fields_by_name['initial_values'].message_type = _SCHEDULERCONNECTION_INITIALVALUESENTRY
+_SCHEDULERCONNECTION.fields_by_name['attribute_links'].message_type = _SCHEDULERCONNECTION_ATTRIBUTELINKSENTRY
 _METAMESSAGE.fields_by_name['type'].enum_type = _METAMESSAGE_MESSAGETYPE
 _METAMESSAGE.fields_by_name['details'].message_type = google_dot_protobuf_dot_any__pb2._ANY
 _METAMESSAGE_MESSAGETYPE.containing_type = _METAMESSAGE
 DESCRIPTOR.message_types_by_name['SystemInit'] = _SYSTEMINIT
 DESCRIPTOR.message_types_by_name['SimulatorConnection'] = _SIMULATORCONNECTION
+DESCRIPTOR.message_types_by_name['SchedulerConnection'] = _SCHEDULERCONNECTION
 DESCRIPTOR.message_types_by_name['AttributeMessage'] = _ATTRIBUTEMESSAGE
 DESCRIPTOR.message_types_by_name['NextStep'] = _NEXTSTEP
 DESCRIPTOR.message_types_by_name['MetaMessage'] = _METAMESSAGE
@@ -325,6 +442,29 @@ SimulatorConnection = _reflection.GeneratedProtocolMessageType('SimulatorConnect
   # @@protoc_insertion_point(class_scope:obnl.common.SimulatorConnection)
   ))
 _sym_db.RegisterMessage(SimulatorConnection)
+
+SchedulerConnection = _reflection.GeneratedProtocolMessageType('SchedulerConnection', (_message.Message,), dict(
+
+  InitialValuesEntry = _reflection.GeneratedProtocolMessageType('InitialValuesEntry', (_message.Message,), dict(
+    DESCRIPTOR = _SCHEDULERCONNECTION_INITIALVALUESENTRY,
+    __module__ = 'data.default_pb2'
+    # @@protoc_insertion_point(class_scope:obnl.common.SchedulerConnection.InitialValuesEntry)
+    ))
+  ,
+
+  AttributeLinksEntry = _reflection.GeneratedProtocolMessageType('AttributeLinksEntry', (_message.Message,), dict(
+    DESCRIPTOR = _SCHEDULERCONNECTION_ATTRIBUTELINKSENTRY,
+    __module__ = 'data.default_pb2'
+    # @@protoc_insertion_point(class_scope:obnl.common.SchedulerConnection.AttributeLinksEntry)
+    ))
+  ,
+  DESCRIPTOR = _SCHEDULERCONNECTION,
+  __module__ = 'data.default_pb2'
+  # @@protoc_insertion_point(class_scope:obnl.common.SchedulerConnection)
+  ))
+_sym_db.RegisterMessage(SchedulerConnection)
+_sym_db.RegisterMessage(SchedulerConnection.InitialValuesEntry)
+_sym_db.RegisterMessage(SchedulerConnection.AttributeLinksEntry)
 
 AttributeMessage = _reflection.GeneratedProtocolMessageType('AttributeMessage', (_message.Message,), dict(
   DESCRIPTOR = _ATTRIBUTEMESSAGE,
@@ -355,4 +495,8 @@ Quit = _reflection.GeneratedProtocolMessageType('Quit', (_message.Message,), dic
 _sym_db.RegisterMessage(Quit)
 
 
+_SCHEDULERCONNECTION_INITIALVALUESENTRY.has_options = True
+_SCHEDULERCONNECTION_INITIALVALUESENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
+_SCHEDULERCONNECTION_ATTRIBUTELINKSENTRY.has_options = True
+_SCHEDULERCONNECTION_ATTRIBUTELINKSENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
 # @@protoc_insertion_point(module_scope)

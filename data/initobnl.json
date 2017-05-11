@@ -1,7 +1,7 @@
 {
   "nodes": {
     "A": {
-      "inputs": ["set"],
+      "inputs": ["seta"],
       "outputs": ["ta"]
     },
     "B": {
@@ -9,8 +9,8 @@
       "outputs": ["tb"]
     },
     "C": {
-      "inputs": ["ta", "tb"],
-      "outputs": ["set"]
+      "inputs": ["t1", "t2"],
+      "outputs": ["setc"]
     }
   },
   "links": {
@@ -21,7 +21,7 @@
       },
       "in": {
         "node":"C",
-        "attr": "ta"
+        "attr": "t1"
       }
     },
     "l2": {
@@ -31,17 +31,17 @@
       },
       "in": {
         "node": "C",
-        "attr": "tb"
+        "attr": "t2"
       }
     },
     "l3": {
       "out": {
         "node":"C",
-        "attr": "set"
+        "attr": "setc"
       },
       "in": {
         "node":"A",
-        "attr": "set"
+        "attr": "seta"
       }
     }
   }
