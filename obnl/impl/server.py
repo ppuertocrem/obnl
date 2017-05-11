@@ -1,5 +1,4 @@
 import json
-import pika
 
 from obnl.impl.node import Node
 from obnl.impl.loaders import JSONLoader
