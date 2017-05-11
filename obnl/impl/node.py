@@ -210,7 +210,8 @@ class ClientNode(Node):
         if self._next_step \
                 and (self._is_first
                      or not self._input_attributes
-                     or len(self._input_values.keys()) == len(self._input_attributes)):
+                     or len(self._input_values.keys()) == len(self._input_attributes))
+            # TODO: call updateX or updateY depending on the meta content
             self.step(self._current_time, self._time_step)
             self._next_step = False
             self._input_values.clear()
@@ -230,7 +231,6 @@ class ClientNode(Node):
             self._reply_to = props.reply_to
             self._current_time = nm.current_time
             self._time_step = nm.time_step
-            # TODO: call updateX or updateY depending on the message detail?
             self.send_local(mm.details)
         elif mm.details.Is(SchedulerConnection.DESCRIPTOR):
             sc = SchedulerConnection()
@@ -245,6 +245,4 @@ class ClientNode(Node):
             am = AttributeMessage()
             mm.details.Unpack(am)
             self._input_values[self._links[am.attribute_name]] = am.attribute_value
-
-        # TODO: call updateX or updateY depending on the meta content
         self.send_local(mm.details)
