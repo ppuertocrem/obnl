@@ -1,6 +1,6 @@
 import pika
 
-from obnl.impl.message import MetaMessage, AttributeMessage, NextStep
+from obnl.impl.message import MetaMessage, AttributeMessage, SimulatorConnection, NextStep
 
 
 class Node(object):
@@ -47,7 +47,8 @@ class Node(object):
 
         self._local_queue = self._channel.queue_declare(queue=Node.LOCAL_NODE_QUEUE + self._name)
         self._local_exchange = self._channel.exchange_declare(exchange=Node.LOCAL_NODE_EXCHANGE + self._name)
-        self._channel.queue_bind(exchange=Node.LOCAL_NODE_EXCHANGE + self._name, queue=Node.LOCAL_NODE_QUEUE + self._name)
+        self._channel.queue_bind(exchange=Node.LOCAL_NODE_EXCHANGE + self._name,
+                                 queue=Node.LOCAL_NODE_QUEUE + self._name)
 
         self._simulation_queue = self._channel.queue_declare(queue=Node.SIMULATION_NODE_QUEUE + self._name)
         self._simulation_exchange = self._channel.exchange_declare(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name)
@@ -79,7 +80,7 @@ class Node(object):
     @property
     def name(self):
         """
-        
+
         :return: the name of the Node 
         """
         return self._name
@@ -90,7 +91,7 @@ class Node(object):
     def create_simulation_links(self, scheduler, position):
         """
         Connects the scheduler exchange to the update queue of the Node
-                
+
         :param scheduler: the scheduler to be connected to
         :param position: the position of the containing block
         """
@@ -104,12 +105,11 @@ class Node(object):
     def reply_to(self, reply_to, message):
         """
         Replies to a message.
-        
+
         :param reply_to: the asker 
         :param message: the message (str)
         """
         if reply_to:
-
             m = MetaMessage()
             m.node_name = self._name
             m.type = MetaMessage.ANSWER
@@ -124,13 +124,14 @@ class Node(object):
     def _on_local_message(self, ch, method, props, body):
         """
         The callback function when a message arrives on the general queue.
-        
+
         :param ch: the channel 
         :param method: the method
         :param props: the properties
         :param body: the message
         """
-        if self._next_step and (self._is_first or not self._input_attributes or len(self._input_values.keys()) == len(self._input_attributes)):
+        if self._next_step and (self._is_first or not self._input_attributes or len(self._input_values.keys()) == len(
+                self._input_attributes)):
             self.step(self._current_time)
             self._next_step = False
             self._input_values.clear()
@@ -209,7 +210,7 @@ class Node(object):
     def update_attribute(self, attr, value):
         """
         Sends the new attribute value to those who want to know.
-                
+
         :param attr: the attribute to communicate 
         :param value: the new value of the attribute
         :return: 
@@ -230,3 +231,33 @@ class Node(object):
                                   body=m.SerializeToString())
 
 
+class ClientNode(Node):
+
+    def __init__(self, host, name, api, input_attributes=None, output_attributes=None, is_first=False):
+        super(ClientNode, self).__init__(host, name, input_attributes, output_attributes, is_first)
+        self._api_node = api
+
+        si = SimulatorConnection()
+        si.type = SimulatorConnection.OTHER
+
+        m = MetaMessage()
+        m.node_name = self._name
+        m.details.Pack(si)
+        self._channel.publish(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name,
+                              routing_key=Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
+                              body=m.SerializeToString())
+
+    @property
+    def input_values(self):
+        return self._input_values
+
+    @property
+    def input_attributes(self):
+        return self._input_attributes
+
+    @property
+    def output_attributes(self):
+        return self._output_attributes
+
+    def step(self, current_time):
+        self._api_node.step(current_time)

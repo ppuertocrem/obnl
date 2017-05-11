@@ -1,7 +1,5 @@
 import json
 
-from .data import Node
-
 
 class Loader(object):
     """

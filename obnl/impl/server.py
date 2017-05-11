@@ -1,19 +1,38 @@
 import json
 import pika
 
-from obnl.impl.data import Node
+from obnl.impl.node import Node
 from obnl.impl.loaders import JSONLoader
-from obnl.impl.message import *
+from obnl.impl.message import SimulatorConnection, NextStep, MetaMessage
 
 
-class Creator(object):
+class Scheduler(Node):
     """
-    This class uses two files to generate an AMQP structure.
+    The Scheduler is a Node that manage the time flow.
     """
 
     def __init__(self, host, config_file, schedule_file):
         """
         
+        :param host: the AMQP host 
+        :param steps: a list of time steps
+        :param blocks: a list of schedule blocks
+        """
+        super(Scheduler, self).__init__(host, Node.SCHEDULER_NAME)
+        self._current_step = 0
+        self._current_block = 0
+        self._quit = False
+
+        self._connected = set()
+        self._sent = set()
+
+        self._channel.exchange_declare(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name)
+
+        self._steps, self._blocks = self._load_data(config_file, schedule_file)
+
+    def _load_data(self, config_file, schedule_file):
+        """
+
         :param host: the host of the AMQP server 
         :param config_file: the file that contains the structure
         :param schedule_file: the file that contains the schedule 
@@ -25,11 +44,9 @@ class Creator(object):
             steps = schedule_data['steps']
             blocks = schedule_data['schedule']
 
-        self._scheduler = Scheduler(host, steps, blocks)
-
         # Currently only JSON can be loaded
         # Load all the Nodes and creates the associated links
-        loader = JSONLoader(self._scheduler, config_file)
+        loader = JSONLoader(self, config_file)
         # Connects the created Nodes to the update exchanger
         # using the schedule definition (blocks)
         # TODO: Should it be in Creator or Scheduler ???
@@ -37,45 +54,9 @@ class Creator(object):
             i = 0
             for block in blocks:
                 if node in block:
-                    self._scheduler.create_simulation_links(node, i)
+                    self.create_simulation_links(node, i)
                 i += 1
-
-    def run(self):
-        """
-        Starts the communication.
-        
-        WARNING: As start_consuming is a blocking function it SHOULD be the last function
-                 called.
-        """
-        self._scheduler.start()
-
-
-class Scheduler(Node):
-    """
-    The Scheduler is a Node that manage the time flow.
-    """
-
-    def step(self):
-        pass
-
-    def __init__(self, host, steps, blocks):
-        """
-        
-        :param host: the AMQP host 
-        :param steps: a list of time steps
-        :param blocks: a list of schedule blocks
-        """
-        super(Scheduler, self).__init__(host, Node.SCHEDULER_NAME)
-        self._steps = steps
-        self._current_step = 0
-        self._blocks = blocks
-        self._current_block = 0
-        self._quit = False
-
-        self._connected = set()
-        self._sent = set()
-
-        self._channel.exchange_declare(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name)
+        return steps, blocks
 
     def start(self):
         """
@@ -84,6 +65,9 @@ class Scheduler(Node):
         self._current_step = 0
         self._current_block = 0
         super(Scheduler, self).start()
+
+    def step(self, current_time):
+        pass
 
     def create_data_link(self, node_out, attr, node_in):
         """
@@ -174,8 +158,3 @@ class Scheduler(Node):
         Displays message receive from the data queue.
         """
         pass
-
-
-if __name__ == "__main__":
-    c = Creator('localhost', '../../data/initobnl.json', '../../data/schedule.json')
-    c.run()

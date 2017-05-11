@@ -1,42 +1,29 @@
-from threading import Thread
-from obnl.impl.data import Node
-
-from obnl.impl.message import MetaMessage, SimulatorConnection
+from obnl.client import ClientNode
 
 
-class ClientNode(Node):
+class ClientTestNode(ClientNode):
 
     def __init__(self, host, name, input_attributes=None, output_attributes=None, is_first=False):
-        super(ClientNode, self).__init__(host, name, input_attributes, output_attributes, is_first)
-
-        si = SimulatorConnection()
-        si.type = SimulatorConnection.OTHER
-
-        m = MetaMessage()
-        m.node_name = self._name
-        m.details.Pack(si)
-        self._channel.publish(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name,
-                              routing_key=Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
-                              body=m.SerializeToString())
+        super(ClientTestNode, self).__init__(host, name, input_attributes, output_attributes, is_first)
 
     def step(self, current_time):
         print('----- '+self.name+' -----')
-        print(self._name, current_time)
-        print(self._name, self._input_values)
-        print(self._name, self._output_attributes)
+        print(self.name, current_time)
+        print(self.name, self.input_values)
+        print(self.name, self.output_attributes)
         print('=============')
-        for o in self._output_attributes:
+        for o in self.output_attributes:
             self.update_attribute(o, 4.2)
 
 if __name__ == "__main__":
 
-    a = ClientNode('localhost', 'A', output_attributes=['ta'], input_attributes=['set'], is_first=True)
-    b = ClientNode('localhost', 'B', output_attributes=['tb'])
-    c = ClientNode('localhost', 'C', input_attributes=['ta', 'tb'], output_attributes=['set'])
+    a = ClientTestNode('localhost', 'A', output_attributes=['ta'], input_attributes=['set'], is_first=True)
+    b = ClientTestNode('localhost', 'B', output_attributes=['tb'])
+    c = ClientTestNode('localhost', 'C', input_attributes=['ta', 'tb'], output_attributes=['set'])
 
     print('Start A')
-    Thread(target=a.start).start()
+    a.start()
     print('Start B')
-    Thread(target=b.start).start()
+    b.start()
     print('Start C')
-    Thread(target=c.start).start()
+    c.start()
