@@ -210,7 +210,7 @@ class ClientNode(Node):
         if self._next_step \
                 and (self._is_first
                      or not self._input_attributes
-                     or len(self._input_values.keys()) == len(self._input_attributes))
+                     or len(self._input_values.keys()) == len(self._input_attributes)):
             # TODO: call updateX or updateY depending on the meta content
             self.step(self._current_time, self._time_step)
             self._next_step = False
