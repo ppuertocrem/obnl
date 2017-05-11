@@ -10,7 +10,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # c = Scheduler('localhost', './../data/initobnl.json', './../data/schedule.json')
-
     c = Scheduler(args.host, args.config_file, args.schedule_file)
     c.start()
