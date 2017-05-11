@@ -1,6 +1,6 @@
 import pika
 
-from obnl.impl.message import MetaMessage, AttributeMessage, SimulatorConnection, NextStep
+from obnl.impl.message import MetaMessage, AttributeMessage, SimulatorConnection, NextStep, SchedulerConnection
 
 
 class Node(object):
@@ -28,7 +28,7 @@ class Node(object):
     UPDATE_ROUTING = 'obnl.update.block.'
     """Base of every routing key for block messages (followed by the number/position of the block)"""
 
-    def __init__(self, host, name, input_attributes=None, output_attributes=None, is_first=False):
+    def __init__(self, host, name):
         """
         The constructor creates the 3 main queues
         - general: To receive data with everyone
@@ -37,9 +37,6 @@ class Node(object):
 
         :param host: the connection to AMQP
         :param name: the id of the Node
-        :param input_attributes: a list of input data
-        :param output_attributes: a list of output data
-        :param is_first: break the loop
         """
         connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
         self._channel = connection.channel()
@@ -55,28 +52,18 @@ class Node(object):
 
         self._data_queue = self._channel.queue_declare(queue=Node.DATA_NODE_QUEUE + self._name)
 
-        self._channel.basic_consume(self._on_local_message,
+        self._channel.basic_consume(self.on_local_message,
                                     consumer_tag='obnl_node_' + self._name + '_local',
                                     queue=self._local_queue.method.queue,
                                     no_ack=True)
-        self._channel.basic_consume(self._on_simulation_message,
+        self._channel.basic_consume(self.on_simulation_message,
                                     consumer_tag='obnl_node_' + self._name + '_simulation',
                                     queue=self._simulation_queue.method.queue,
                                     no_ack=True)
-        self._channel.basic_consume(self._on_data_message,
+        self._channel.basic_consume(self.on_data_message,
                                     consumer_tag='obnl_node_' + self._name + '_data',
                                     queue=self._data_queue.method.queue,
                                     no_ack=True)
-
-        self._next_step = False
-        self._reply_to = None
-        self._is_first = is_first
-        self._current_time = 0
-        self._time_step = 0
-
-        self._input_values = {}
-        self._input_attributes = input_attributes
-        self._output_attributes = output_attributes
 
     @property
     def name(self):
@@ -87,21 +74,66 @@ class Node(object):
         return self._name
 
     def start(self):
+        """
+        Starts listening.
+        """
         self._channel.start_consuming()
 
-    def create_simulation_links(self, scheduler, position):
+    def on_local_message(self, ch, method, props, body):
         """
-        Connects the scheduler exchange to the update queue of the Node
+        Callback when a message come from this node.
+        """
+        raise NotImplementedError('Abstract function call from '+str(self.__class__))
 
-        :param scheduler: the scheduler to be connected to
-        :param position: the position of the containing block
+    def on_simulation_message(self, ch, method, props, body):
         """
-        self._channel.queue_bind(exchange=Node.SIMULATION_NODE_EXCHANGE + scheduler,
-                                 routing_key=Node.UPDATE_ROUTING + str(position),
-                                 queue=Node.SIMULATION_NODE_QUEUE + self._name)
-        self._channel.queue_bind(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name,
-                                 routing_key=Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
-                                 queue=Node.SIMULATION_NODE_QUEUE + scheduler)
+        Callback when a message come from another Node to inform about simulation.
+        """
+        raise NotImplementedError('Abstract function call from '+str(self.__class__))
+
+    def on_data_message(self, ch, method, props, body):
+        """
+        Callback when a message come from another Node to inform about data update.
+        """
+        raise NotImplementedError('Abstract function call from '+str(self.__class__))
+
+    def send(self, exchange, routing, message, reply_to=None):
+        """
+        
+        :param exchange: the MQTT exchqnge
+        :param routing: the MQTT routing key
+        :param message: the protobuf message
+        :param reply_to: the routing key to reply to
+        """
+
+        mm = MetaMessage()
+        mm.node_name = self._name
+        mm.details.Pack(message)
+
+        self._channel.publish(exchange=exchange,
+                              routing_key=routing,
+                              properties=pika.BasicProperties(reply_to=reply_to),
+                              body=mm.SerializeToString())
+
+    def send_local(self, message):
+        """
+        Sends the content to local.
+
+        :param message: a protobuf message 
+        """
+        self.send(Node.LOCAL_NODE_EXCHANGE + self._name,
+                  Node.LOCAL_NODE_EXCHANGE + self._name,
+                  message)
+
+    def send_scheduler(self, message):
+        """
+        Sends the content to scheduler.
+
+        :param message: a protobuf message 
+        """
+        self.send(Node.SIMULATION_NODE_EXCHANGE + self._name,
+                  Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
+                  message)
 
     def reply_to(self, reply_to, message):
         """
@@ -119,136 +151,31 @@ class Node(object):
 
             self._channel.publish(exchange='', routing_key=reply_to, body=m.SerializeToString())
 
-    def step(self, current_time, time_step):
-        raise NotImplementedError('Abstract function call from '+str(self.__class__))
-
-    def _on_local_message(self, ch, method, props, body):
-        """
-        The callback function when a message arrives on the general queue.
-
-        :param ch: the channel 
-        :param method: the method
-        :param props: the properties
-        :param body: the message
-        """
-        if self._next_step and (self._is_first or not self._input_attributes or len(self._input_values.keys()) == len(
-                self._input_attributes)):
-            self.step(self._current_time, self._time_step)
-            self._next_step = False
-            self._input_values.clear()
-            nm = NextStep()
-            nm.current_time = self._current_time
-            nm.time_step = self._time_step
-            self.reply_to(self._reply_to, nm)
-
-    def _on_simulation_message(self, ch, method, props, body):
-        """
-        The callback function when a message arrives on the update queue.
-
-        :param ch: the channel 
-        :param method: the method
-        :param props: the properties
-        :param body: the message
-        """
-        mm = MetaMessage()
-        mm.ParseFromString(body)
-
-        if mm.details.Is(NextStep.DESCRIPTOR) and mm.node_name == Node.SCHEDULER_NAME:
-            self._next_step = True
-            self._reply_to = props.reply_to
-            nm = NextStep()
-            mm.details.Unpack(nm)
-            self._current_time = nm.current_time
-            self._time_step = nm.time_step
-            # TODO: call updateX or updateY depending on the message detail?
-            self.send_local(mm.details)
-
-    def _on_data_message(self, ch, method, props, body):
-        """
-        The callback function when a message arrives on the data/attr queue.
-
-        :param ch: the channel 
-        :param method: the method
-        :param props: the properties
-        :param body: the message
-        """
-        mm = MetaMessage()
-        mm.ParseFromString(body)
-
-        if mm.details.Is(AttributeMessage.DESCRIPTOR):
-            am = AttributeMessage()
-            mm.details.Unpack(am)
-            self._input_values[am.attribute_name] = am.attribute_value
-
-        # TODO: call updateX or updateY depending on the meta content
-        self.send_local(mm.details)
-
-    def send_local(self, message):
-        """
-        Sends the content to local.
-
-        :param message: a protobuf message 
-        :param reply_to: the way to reply
-        :return: 
-        """
-        self._channel.publish(exchange=Node.LOCAL_NODE_EXCHANGE + self._name,
-                              routing_key=Node.LOCAL_NODE_EXCHANGE + self._name,
-                              body=message.SerializeToString())
-
-    def send_scheduler(self, message):
-        """
-        Sends the content to local.
-
-        :param message: a protobuf message 
-        :return: 
-        """
-        m = MetaMessage()
-        m.node_name = self._name
-        m.details.Pack(message)
-
-        self._channel.publish(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name,
-                              routing_key=Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
-                              body=m.SerializeToString())
-
-    def update_attribute(self, attr, value):
-        """
-        Sends the new attribute value to those who want to know.
-
-        :param attr: the attribute to communicate 
-        :param value: the new value of the attribute
-        :return: 
-        """
-        am = AttributeMessage()
-        am.simulation_time = 0  # FIXME: where is the simulation time ?
-        am.attribute_name = attr
-        am.attribute_value = float(value)
-
-        m = MetaMessage()
-        m.node_name = self._name
-        m.type = MetaMessage.ATTRIBUTE
-        m.details.Pack(am)
-
-        if self._output_attributes:
-            self._channel.publish(exchange=Node.DATA_NODE_EXCHANGE + self._name,
-                                  routing_key=Node.DATA_NODE_EXCHANGE + attr,
-                                  body=m.SerializeToString())
-
 
 class ClientNode(Node):
 
     def __init__(self, host, name, api, input_attributes=None, output_attributes=None, is_first=False):
-        super(ClientNode, self).__init__(host, name, input_attributes, output_attributes, is_first)
+        super(ClientNode, self).__init__(host, name)
         self._api_node = api
+
+        self._next_step = False
+        self._reply_to = None
+        self._is_first = is_first
+        self._current_time = 0
+        self._time_step = 0
+
+        self._links = {}
+        self._input_values = {}
+        self._input_attributes = input_attributes
+        self._output_attributes = output_attributes
 
         si = SimulatorConnection()
         si.type = SimulatorConnection.OTHER
 
-        m = MetaMessage()
-        m.node_name = self._name
-        m.details.Pack(si)
-        self._channel.publish(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name,
-                              routing_key=Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
-                              body=m.SerializeToString())
+        self.send(Node.SIMULATION_NODE_EXCHANGE + self._name,
+                  Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
+                  si,
+                  reply_to=Node.SIMULATION_NODE_QUEUE + self.name)
 
     @property
     def input_values(self):
@@ -264,3 +191,66 @@ class ClientNode(Node):
 
     def step(self, current_time, time_step):
         self._api_node.step(current_time, time_step)
+
+    def update_attribute(self, attr, value):
+        """
+        Sends the new attribute value to those who want to know.
+
+        :param attr: the attribute to communicate 
+        :param value: the new value of the attribute
+        """
+        am = AttributeMessage()
+        am.simulation_time = self._current_time
+        am.attribute_name = attr
+        am.attribute_value = float(value)
+
+        m = MetaMessage()
+        m.node_name = self._name
+        m.type = MetaMessage.ATTRIBUTE
+        m.details.Pack(am)
+
+        if self._output_attributes:
+            self._channel.publish(exchange=Node.DATA_NODE_EXCHANGE + self._name,
+                                  routing_key=Node.DATA_NODE_EXCHANGE + attr,
+                                  body=m.SerializeToString())
+
+    def on_local_message(self, ch, method, props, body):
+        if self._next_step \
+                and (self._is_first
+                     or not self._input_attributes
+                     or len(self._input_values.keys()) == len(self._input_attributes)):
+            # TODO: call updateX or updateY depending on the meta content
+            self.step(self._current_time, self._time_step)
+            self._next_step = False
+            self._input_values.clear()
+            nm = NextStep()
+            nm.current_time = self._current_time
+            nm.time_step = self._time_step
+            self.reply_to(self._reply_to, nm)
+
+    def on_simulation_message(self, ch, method, props, body):
+        mm = MetaMessage()
+        mm.ParseFromString(body)
+
+        if mm.details.Is(NextStep.DESCRIPTOR) and mm.node_name == Node.SCHEDULER_NAME:
+            nm = NextStep()
+            mm.details.Unpack(nm)
+            self._next_step = True
+            self._reply_to = props.reply_to
+            self._current_time = nm.current_time
+            self._time_step = nm.time_step
+            self.send_local(mm.details)
+        elif mm.details.Is(SchedulerConnection.DESCRIPTOR):
+            sc = SchedulerConnection()
+            mm.details.Unpack(sc)
+            self._links = dict(sc.attribute_links)
+
+    def on_data_message(self, ch, method, props, body):
+        mm = MetaMessage()
+        mm.ParseFromString(body)
+
+        if mm.details.Is(AttributeMessage.DESCRIPTOR):
+            am = AttributeMessage()
+            mm.details.Unpack(am)
+            self._input_values[self._links[am.attribute_name]] = am.attribute_value
+        self.send_local(mm.details)

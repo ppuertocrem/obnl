@@ -1,3 +1,4 @@
+import random
 from obnl.client import ClientNode
 
 
@@ -14,13 +15,13 @@ class ClientTestNode(ClientNode):
         print(self.name, self.output_attributes)
         print('=============')
         for o in self.output_attributes:
-            self.update_attribute(o, 4.2)
+            self.update_attribute(o, random.random())
 
 if __name__ == "__main__":
 
-    a = ClientTestNode('localhost', 'A', output_attributes=['ta'], input_attributes=['set'], is_first=True)
+    a = ClientTestNode('localhost', 'A', output_attributes=['ta'], input_attributes=['seta'], is_first=True)
     b = ClientTestNode('localhost', 'B', output_attributes=['tb'])
-    c = ClientTestNode('localhost', 'C', input_attributes=['ta', 'tb'], output_attributes=['set'])
+    c = ClientTestNode('localhost', 'C', input_attributes=['t1', 't2'], output_attributes=['setc'])
 
     print('Start A')
     a.start()
