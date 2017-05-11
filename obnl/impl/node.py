@@ -74,18 +74,37 @@ class Node(object):
         return self._name
 
     def start(self):
+        """
+        Starts listening.
+        """
         self._channel.start_consuming()
 
     def on_local_message(self, ch, method, props, body):
+        """
+        Callback when a message come from this node.
+        """
         raise NotImplementedError('Abstract function call from '+str(self.__class__))
 
     def on_simulation_message(self, ch, method, props, body):
+        """
+        Callback when a message come from another Node to inform about simulation.
+        """
         raise NotImplementedError('Abstract function call from '+str(self.__class__))
 
     def on_data_message(self, ch, method, props, body):
+        """
+        Callback when a message come from another Node to inform about data update.
+        """
         raise NotImplementedError('Abstract function call from '+str(self.__class__))
 
     def send(self, exchange, routing, message, reply_to=None):
+        """
+        
+        :param exchange: the MQTT exchqnge
+        :param routing: the MQTT routing key
+        :param message: the protobuf message
+        :param reply_to: the routing key to reply to
+        """
 
         mm = MetaMessage()
         mm.node_name = self._name
@@ -101,7 +120,6 @@ class Node(object):
         Sends the content to local.
 
         :param message: a protobuf message 
-        :return: 
         """
         self.send(Node.LOCAL_NODE_EXCHANGE + self._name,
                   Node.LOCAL_NODE_EXCHANGE + self._name,
@@ -109,10 +127,9 @@ class Node(object):
 
     def send_scheduler(self, message):
         """
-        Sends the content to local.
+        Sends the content to scheduler.
 
         :param message: a protobuf message 
-        :return: 
         """
         self.send(Node.SIMULATION_NODE_EXCHANGE + self._name,
                   Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
@@ -181,7 +198,6 @@ class ClientNode(Node):
 
         :param attr: the attribute to communicate 
         :param value: the new value of the attribute
-        :return: 
         """
         am = AttributeMessage()
         am.simulation_time = self._current_time
@@ -199,14 +215,6 @@ class ClientNode(Node):
                                   body=m.SerializeToString())
 
     def on_local_message(self, ch, method, props, body):
-        """
-        The callback function when a message arrives on the general queue.
-
-        :param ch: the channel 
-        :param method: the method
-        :param props: the properties
-        :param body: the message
-        """
         if self._next_step \
                 and (self._is_first
                      or not self._input_attributes

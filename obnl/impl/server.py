@@ -15,8 +15,8 @@ class Scheduler(Node):
         """
         
         :param host: the AMQP host 
-        :param steps: a list of time steps
-        :param blocks: a list of schedule blocks
+        :param config_file: a file containing time steps
+        :param schedule_file: a file containing schedule blocks
         """
         super(Scheduler, self).__init__(host, Node.SCHEDULER_NAME)
         self._current_step = 0
@@ -35,10 +35,8 @@ class Scheduler(Node):
 
     def _load_data(self, config_file, schedule_file):
         """
-
-        :param host: the host of the AMQP server 
-        :param config_file: the file that contains the structure
-        :param schedule_file: the file that contains the schedule 
+        :param config_file: the file containing the structure
+        :param schedule_file: the file containing the schedule 
         """
 
         # Currently only JSON can be loaded
@@ -63,7 +61,7 @@ class Scheduler(Node):
 
     def start(self):
         """
-        Sends the first time message.
+        Starts listening.
         """
         self._current_step = 0
         self._current_block = 0
@@ -122,13 +120,13 @@ class Scheduler(Node):
 
     def on_local_message(self, ch, method, props, body):
         """
-        Displays message receive from the general queue.
+        Callback when a message come from this node. Never append with Scheduler
         """
         pass
 
     def on_simulation_message(self, ch, method, props, body):
         """
-        Displays message receive from the update queue and send the next time message.
+        Callback when a message come from Node.
         """
         m = MetaMessage()
         m.ParseFromString(body)
