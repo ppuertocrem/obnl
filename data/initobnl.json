@@ -2,11 +2,11 @@
   "nodes": {
     "A": {
       "inputs": ["set"],
-      "outputs": ["t"]
+      "outputs": ["ta"]
     },
     "B": {
       "inputs": [],
-      "outputs": ["t"]
+      "outputs": ["tb"]
     },
     "C": {
       "inputs": ["ta", "tb"],
@@ -17,7 +17,7 @@
     "l1": {
       "out": {
         "node":"A",
-        "attr": "t"
+        "attr": "ta"
       },
       "in": {
         "node":"C",
@@ -27,7 +27,7 @@
     "l2": {
       "out": {
         "node": "B",
-        "attr": "t"
+        "attr": "tb"
       },
       "in": {
         "node": "C",
