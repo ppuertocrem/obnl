@@ -1,3 +1,4 @@
+import sys
 import pika
 
 from obnl.impl.message import MetaMessage, AttributeMessage, SimulatorConnection, NextStep, SchedulerConnection, Quit
@@ -42,27 +43,12 @@ class Node(object):
         self._channel = connection.channel()
         self._name = name
 
-        self._local_queue = self._channel.queue_declare(queue=Node.LOCAL_NODE_QUEUE + self._name)
-        self._local_exchange = self._channel.exchange_declare(exchange=Node.LOCAL_NODE_EXCHANGE + self._name)
-        self._channel.queue_bind(exchange=Node.LOCAL_NODE_EXCHANGE + self._name,
-                                 queue=Node.LOCAL_NODE_QUEUE + self._name)
-
         self._simulation_queue = self._channel.queue_declare(queue=Node.SIMULATION_NODE_QUEUE + self._name)
         self._simulation_exchange = self._channel.exchange_declare(exchange=Node.SIMULATION_NODE_EXCHANGE + self._name)
 
-        self._data_queue = self._channel.queue_declare(queue=Node.DATA_NODE_QUEUE + self._name)
-
-        self._channel.basic_consume(self.on_local_message,
-                                    consumer_tag='obnl_node_' + self._name + '_local',
-                                    queue=self._local_queue.method.queue,
-                                    no_ack=True)
         self._channel.basic_consume(self.on_simulation_message,
                                     consumer_tag='obnl_node_' + self._name + '_simulation',
                                     queue=self._simulation_queue.method.queue,
-                                    no_ack=True)
-        self._channel.basic_consume(self.on_data_message,
-                                    consumer_tag='obnl_node_' + self._name + '_data',
-                                    queue=self._data_queue.method.queue,
                                     no_ack=True)
 
     @property
@@ -100,7 +86,7 @@ class Node(object):
     def send(self, exchange, routing, message, reply_to=None):
         """
         
-        :param exchange: the MQTT exchqnge
+        :param exchange: the MQTT exchange
         :param routing: the MQTT routing key
         :param message: the protobuf message
         :param reply_to: the routing key to reply to
@@ -146,6 +132,26 @@ class ClientNode(Node):
 
     def __init__(self, host, name, api, input_attributes=None, output_attributes=None, is_first=False):
         super(ClientNode, self).__init__(host, name)
+
+        # Local communication
+        self._local_queue = self._channel.queue_declare(queue=Node.LOCAL_NODE_QUEUE + self._name)
+        self._local_exchange = self._channel.exchange_declare(exchange=Node.LOCAL_NODE_EXCHANGE + self._name)
+
+        self._channel.basic_consume(self.on_local_message,
+                                    consumer_tag='obnl_node_' + self._name + '_local',
+                                    queue=self._local_queue.method.queue,
+                                    no_ack=True)
+        self._channel.queue_bind(exchange=Node.LOCAL_NODE_EXCHANGE + self._name,
+                                 queue=Node.LOCAL_NODE_QUEUE + self._name)
+
+        # Data communication
+        self._data_queue = self._channel.queue_declare(queue=Node.DATA_NODE_QUEUE + self._name)
+
+        self._channel.basic_consume(self.on_data_message,
+                                    consumer_tag='obnl_node_' + self._name + '_data',
+                                    queue=self._data_queue.method.queue,
+                                    no_ack=True)
+
         self._api_node = api
 
         self._next_step = False
@@ -233,7 +239,6 @@ class ClientNode(Node):
             mm.details.Unpack(sc)
             self._links = dict(sc.attribute_links)
         elif mm.details.Is(Quit.DESCRIPTOR):
-            import sys
             sys.exit(0)
 
     def on_data_message(self, ch, method, props, body):

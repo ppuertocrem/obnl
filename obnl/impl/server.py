@@ -1,3 +1,4 @@
+import sys
 import json
 
 from obnl.impl.node import Node
@@ -153,7 +154,6 @@ class Scheduler(Node):
                     self._update_time()
                     self._sent.clear()
                 else:
-                    import sys
                     sys.exit(0)
 
     def _simulator_connection(self, message, reply_to):
