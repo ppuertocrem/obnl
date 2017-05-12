@@ -1,0 +1,4 @@
+include *.py
+include *.proto
+include *.json
+include requirements.txt
