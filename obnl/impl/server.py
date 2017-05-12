@@ -2,7 +2,7 @@ import json
 
 from obnl.impl.node import Node
 from obnl.impl.loaders import JSONLoader
-from obnl.impl.message import SimulatorConnection, NextStep, MetaMessage, SchedulerConnection
+from obnl.impl.message import SimulatorConnection, NextStep, MetaMessage, SchedulerConnection, Quit
 
 
 class Scheduler(Node):
@@ -112,10 +112,8 @@ class Scheduler(Node):
         ns.time_step = self._steps[self._current_step]
         ns.current_time = self._current_time
 
-        self.send(Node.SIMULATION_NODE_EXCHANGE + self._name,
-                  Node.UPDATE_ROUTING + str(self._current_block),
-                  ns,
-                  reply_to=Node.SIMULATION_NODE_QUEUE + self.name)
+        self.send_simulation(Node.UPDATE_ROUTING + str(self._current_block),
+                             ns, reply_to=Node.SIMULATION_NODE_QUEUE + self.name)
 
     def on_local_message(self, ch, method, props, body):
         """
@@ -148,11 +146,15 @@ class Scheduler(Node):
                     self._current_step += 1
                     if self._current_step >= len(self._steps):
                         self._quit = True
-                        return
-                    self._current_time += self._steps[self._current_step]
+                        self.broadcast_simulation(Quit())
+                    else:
+                        self._current_time += self._steps[self._current_step]
                 if not self._quit:
                     self._update_time()
                     self._sent.clear()
+                else:
+                    import sys
+                    sys.exit(0)
 
     def _simulator_connection(self, message, reply_to):
         node_name = message.node_name
@@ -170,3 +172,10 @@ class Scheduler(Node):
         Displays message receive from the data queue.
         """
         pass
+
+    def broadcast_simulation(self, message, reply_to=None):
+
+        for block_id in range(len(self._blocks)):
+            self.send_simulation(Node.UPDATE_ROUTING + str(block_id),
+                                 message, reply_to=reply_to)
+

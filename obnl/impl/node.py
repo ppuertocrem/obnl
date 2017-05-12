@@ -1,6 +1,6 @@
 import pika
 
-from obnl.impl.message import MetaMessage, AttributeMessage, SimulatorConnection, NextStep, SchedulerConnection
+from obnl.impl.message import MetaMessage, AttributeMessage, SimulatorConnection, NextStep, SchedulerConnection, Quit
 
 
 class Node(object):
@@ -115,26 +115,6 @@ class Node(object):
                               properties=pika.BasicProperties(reply_to=reply_to),
                               body=mm.SerializeToString())
 
-    def send_local(self, message):
-        """
-        Sends the content to local.
-
-        :param message: a protobuf message 
-        """
-        self.send(Node.LOCAL_NODE_EXCHANGE + self._name,
-                  Node.LOCAL_NODE_EXCHANGE + self._name,
-                  message)
-
-    def send_scheduler(self, message):
-        """
-        Sends the content to scheduler.
-
-        :param message: a protobuf message 
-        """
-        self.send(Node.SIMULATION_NODE_EXCHANGE + self._name,
-                  Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
-                  message)
-
     def reply_to(self, reply_to, message):
         """
         Replies to a message.
@@ -150,6 +130,16 @@ class Node(object):
             m.details.Pack(message)
 
             self._channel.publish(exchange='', routing_key=reply_to, body=m.SerializeToString())
+
+    def send_simulation(self, routing, message, reply_to=None):
+        """
+
+        :param routing: the MQTT routing key
+        :param message: the protobuf message
+        :param reply_to: the routing key to reply to
+        """
+        self.send(Node.SIMULATION_NODE_EXCHANGE + self._name,
+                  routing, message, reply_to=reply_to)
 
 
 class ClientNode(Node):
@@ -172,10 +162,8 @@ class ClientNode(Node):
         si = SimulatorConnection()
         si.type = SimulatorConnection.OTHER
 
-        self.send(Node.SIMULATION_NODE_EXCHANGE + self._name,
-                  Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
-                  si,
-                  reply_to=Node.SIMULATION_NODE_QUEUE + self.name)
+        self.send_simulation(Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
+                             si, reply_to=Node.SIMULATION_NODE_QUEUE + self.name)
 
     @property
     def input_values(self):
@@ -244,6 +232,9 @@ class ClientNode(Node):
             sc = SchedulerConnection()
             mm.details.Unpack(sc)
             self._links = dict(sc.attribute_links)
+        elif mm.details.Is(Quit.DESCRIPTOR):
+            import sys
+            sys.exit(0)
 
     def on_data_message(self, ch, method, props, body):
         mm = MetaMessage()
@@ -254,3 +245,23 @@ class ClientNode(Node):
             mm.details.Unpack(am)
             self._input_values[self._links[am.attribute_name]] = am.attribute_value
         self.send_local(mm.details)
+
+    def send_local(self, message):
+        """
+        Sends the content to local.
+
+        :param message: a protobuf message 
+        """
+        self.send(Node.LOCAL_NODE_EXCHANGE + self._name,
+                  Node.LOCAL_NODE_EXCHANGE + self._name,
+                  message)
+
+    def send_scheduler(self, message):
+        """
+        Sends the content to scheduler.
+
+        :param message: a protobuf message 
+        """
+        self.send(Node.SIMULATION_NODE_EXCHANGE + self._name,
+                  Node.SIMULATION_NODE_EXCHANGE + Node.SCHEDULER_NAME,
+                  message)
