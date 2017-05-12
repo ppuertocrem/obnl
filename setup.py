@@ -4,8 +4,6 @@ import platform
 
 conf_dict = read_configuration('./setup.cfg')
 
-print(conf_dict)
-
 setup(name=conf_dict['name'],
       maintainer=conf_dict['maintainer'],
       maintainer_email=conf_dict['maintainer_email'],

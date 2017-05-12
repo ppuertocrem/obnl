@@ -12,10 +12,12 @@ class ClientTestNode(ClientNode):
         print(self.name, time_step)
         print(self.name, current_time)
         print(self.name, self.input_values)
-        print(self.name, self.output_attributes)
-        print('=============')
+
         for o in self.output_attributes:
-            self.update_attribute(o, random.random())
+            rv = random.random()
+            print(self.name, o, ':', rv)
+            self.update_attribute(o, rv)
+        print('=============')
 
 if __name__ == "__main__":
 
