@@ -21,7 +21,6 @@ class Scheduler(Node):
         super(Scheduler, self).__init__(host, Node.SCHEDULER_NAME)
         self._current_step = 0
         self._current_block = 0
-        self._quit = False
 
         self._connected = set()
         self._sent = set()
@@ -146,15 +145,12 @@ class Scheduler(Node):
                 if self._current_block == 0:
                     self._current_step += 1
                     if self._current_step >= len(self._steps):
-                        self._quit = True
                         self.broadcast_simulation(Quit())
+                        sys.exit(0)
                     else:
                         self._current_time += self._steps[self._current_step]
-                if not self._quit:
-                    self._update_time()
-                    self._sent.clear()
-                else:
-                    sys.exit(0)
+                self._update_time()
+                self._sent.clear()
 
     def _simulator_connection(self, message, reply_to):
         node_name = message.node_name
