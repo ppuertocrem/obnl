@@ -11,13 +11,15 @@ Table of Contents
  8. License
  9. Copyright
 
-0. Foreword
+Foreword
 ===
+
 As OBNL uses AMQP/MQTT protocol (with pika), a server SHALL be running. If docker is 
 installed the following command starts a RabbitMQ server:  
+
     docker run -d --hostname my-rabbit -p 5672:5672 --name some-rabbit rabbitmq:alpine
 
-1. Synopsis
+Synopsis
 ===
 OBNL was firstly imagine as a light implementation of OpenBuildNet (OBN) in Python.
 Its name initially means OpenBuildNet Light.
@@ -28,13 +30,13 @@ During the first development and tests, we realise that it was very complicated
 to match the requirement of OBN. Therefore we decide to realise a co-simulator based on
 OBN - an "OpenBuildNet Like" co-simulator.
 
-2. Latest Version
+Latest Version
 ===
 You can find the latest version of OBNL on :
     https://github.com/ppuertocrem/obnl
 
 
-3. Installation
+Installation
 ===
 OBNL is a full python project thus as long as Python is installed on your
 system you can install it by moving in the root folder (the folder this README
@@ -50,19 +52,19 @@ Warning : OBNL requires these packages to be used in full :
  * protobuf
 
 
-4. Documentation
+Documentation
 ===
 Currently, the documentation is only accessible in source code.
 
 
-5. Bug Reporting
+Bug Reporting
 ===
 If you find any bugs, or if you want new features you can put your request on
 github at the following address :
     https://github.com/ppuertocrem/obnl
 
 
-6. Contributors
+Contributors
 ===
 
 The OBNL Team is currently composed of :
@@ -72,21 +74,21 @@ The OBNL Team is currently composed of :
  * Jessen Page (jessen.page@hevs.ch)
 
 
-7. Contacts
+Contacts
 ===
 For questions, bug reports, patches and new elements / modules, please use the Bug Reporting.
 
 
-8. License
+License
 ===
 You should have received a copy of the GNU General Public License along with
 this program.
 If not, see <http://www.gnu.org/licenses/>.
 
 
-9. Copyright
+Copyright
 ===
-Copyright (C) 2011-2017 The OBNL Team
+Copyright (C) 2017 The OBNL Team
 
 This file is part of the OBNL project.
 
