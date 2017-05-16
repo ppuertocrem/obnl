@@ -1,0 +1,82 @@
+{
+  "nodes": {
+    "HeatPumpCentral": {
+      "inputs": ["t_in_cold", "t_in_hot", "t_set"],
+      "outputs": ["t_out_cold", "t_out_hot", "p_elec", "p_heat_in", "p_heat_out"]
+    },
+    "HeatPumpCooling": {
+      "inputs": ["t_in_cold", "t_in_hot", "t_set", "p_cool"],
+      "outputs": ["t_out_cold", "t_out_hot", "p_elec"]
+    },
+    "HeatPumpHeating": {
+      "inputs": ["t_in_cold", "t_in_hot", "t_set", "p_heat"],
+      "outputs": ["t_out_cold", "t_out_hot", "p_elec"]
+    },
+    "ThermalNetwork": {
+      "inputs": ["t_sup", "t_ret_cool", "t_ret_heat"],
+      "outputs": ["t_ret", "t_sup_cool", "t_sup_heat"]
+    }
+  },
+  "links": {
+    "l1": {
+      "out": {
+        "node":"HeatPumpCentral",
+        "attr": "t_out_hot"
+      },
+      "in": {
+        "node":"ThermalNetwork",
+        "attr": "t_sup"
+      }
+    },
+    "l2": {
+      "out": {
+        "node": "ThermalNetwork",
+        "attr": "t_ret"
+      },
+      "in": {
+        "node": "HeatPumpCentral",
+        "attr": "t_in_hot"
+      }
+    },
+    "l3": {
+      "out": {
+        "node":"HeatPumpCooling",
+        "attr": "t_out_hot"
+      },
+      "in": {
+        "node":"ThermalNetwork",
+        "attr": "t_ret_cool"
+      }
+    },
+    "l4": {
+      "out": {
+        "node":"ThermalNetwork",
+        "attr": "t_sup_cool"
+      },
+      "in": {
+        "node":"HeatPumpCooling",
+        "attr": "t_in_hot"
+      }
+    },
+    "l5": {
+      "out": {
+        "node":"HeatPumpHeating",
+        "attr": "t_out_cold"
+      },
+      "in": {
+        "node":"ThermalNetwork",
+        "attr": "t_ret_heat"
+      }
+    },
+    "l6": {
+      "out": {
+        "node":"ThermalNetwork",
+        "attr": "t_sup_heat"
+      },
+      "in": {
+        "node":"HeatPumpHeating",
+        "attr": "t_in_cold"
+      }
+    }
+  }
+}
