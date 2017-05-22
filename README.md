@@ -21,18 +21,18 @@ installed the following command starts a RabbitMQ server:
 
 Synopsis
 ===
-OBNL was firstly imagine as a light implementation of OpenBuildNet (OBN) in Python.
+OBNL was initially imagined as a light implementation of OpenBuildNet (OBN) in Python.
 Its name initially means OpenBuildNet Light.
 
-The main purpose of OBNL is simulator communication to simply realise a co-simulation.
+The main purpose of OBNL is simulator communication for the purpose of co-simulation.
 
-During the first development and tests, we realise that it was very complicated
-to match the requirement of OBN. Therefore we decide to realise a co-simulator based on
+During the first development and tests, we realised that it was very complicated
+to match the requirement of OBN. Therefore we decided to realise a co-simulator based on
 OBN - an "OpenBuildNet Like" co-simulator.
 
 Latest Version
 ===
-You can find the latest version of OBNL on :
+You can find the latest version of OBNL of :
     https://github.com/ppuertocrem/obnl
 
 
@@ -44,7 +44,7 @@ file should be) and run :
 
     python setup.py install
     
-In some systems you need Administrator right to run this command.
+In some systems you need Administrator rights to run this command.
 
 Warning : OBNL requires these packages to be used in full :
 
@@ -92,7 +92,7 @@ Copyright (C) 2017 The OBNL Team
 
 This file is part of the OBNL project.
 
-The OBNL project is free software; you can redistribute it and/or modify it
+OBNL is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the Free
 Software Foundation; either version 3 of the License, or (at your option) any
 later version.
